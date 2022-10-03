@@ -1,6 +1,5 @@
 trial,start_time,rt,correct,fact_id,question,answer,flipped,alpha
-1,34029,2207,True,1,hello,bonjour,False,0.3
-2,38007,1890,True,1,bonjour,hello,True,0.3
-3,50000,1200,True,1,hello,bonjour,False,0.250390625
-4,60000,1100,True,1,hello,bonjour,False,0.20156249999999998
-5,70000,1000,True,1,hello,bonjour,False,0.200390625
+1,4105,7663,False,2,I,mimi,False,0.3
+2,28056,2457,True,2,mimi,I,True,0.3
+3,45875,4887,True,14,one,moja,False,0.3
+4,151806,3747,True,14,moja,one,True,0.3
