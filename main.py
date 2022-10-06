@@ -40,9 +40,9 @@ if __name__ == "__main__":
         if options.trials and count > options.trials:
             break
 
-        fact, new = m.get_next_fact(int(time()*1000 - startMs))
-
         presTime = int(time()*1000 - startMs)
+        fact, new = m.get_next_fact(presTime)
+
         if new:
             answer = input(
                 f"New vocabulary: {fact.answer} means {fact.question}!\nPlease type what {fact.question} means below.\n").strip()

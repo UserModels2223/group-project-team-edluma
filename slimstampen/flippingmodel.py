@@ -1,7 +1,9 @@
 """flippingmodel"""
 import slimstampen.spacingmodel as sp
 from collections import namedtuple
-from typing import Tuple, List
+from typing import Tuple, List, Union
+import pandas as pd
+import io
 
 Fact = namedtuple("Fact", sp.Fact._fields + ("flipped",), defaults=(False,))
 Response = sp.Response
@@ -13,7 +15,7 @@ class FlippingModel(sp.SpacingModel):
     An extension to the basic slimstampen spacingmodel that flips the question and answer of the individual facts in a regular order.
     """
 
-    FLIPPING_THRESHOLD = -0.8
+    FLIPPING_THRESHOLD = -0.6
     FLIPPING_ALPHA = 0.3
 
     def get_next_fact(self, current_time: int) -> Tuple[Fact, bool]:
@@ -32,7 +34,7 @@ class FlippingModel(sp.SpacingModel):
     def flip_fact(self, fact: Fact, time: int) -> Fact:
         """decide if the fact needs to be flipped or not"""
 
-        if self.calculate_flipping_activation(fact, time) < self.FLIPPING_THRESHOLD:
+        if self.calculate_flip_activation(time, fact) < self.FLIPPING_THRESHOLD:
 
             new_fact = fact._replace(
                 question=fact.answer, answer=fact.question, flipped=not fact.flipped)
@@ -42,12 +44,12 @@ class FlippingModel(sp.SpacingModel):
         else:
             return fact
 
-    def calculate_flipping_activation(self, fact: Fact, time: int) -> float:
-        """claculate the flipping activation of a fact"""
+    def calculate_flip_activation(self, time: int, fact: Fact) -> float:
+        """calculate the flipping activation of a fact"""
         encounters = []
 
         responses_for_fact = [
-            r for r in self.responses if r.fact.fact_id == fact.fact_id and r.start_time < time]
+            r for r in self.responses if r.fact.fact_id == fact.fact_id and r.start_time < time and r.fact.flipped == fact.flipped]
 
         alpha = self.FLIPPING_ALPHA
 
@@ -57,7 +59,7 @@ class FlippingModel(sp.SpacingModel):
                 encounters, response.start_time)
             encounters.append(Encounter(activation, response.start_time,
                               self.normalise_reaction_time(response), self.FLIPPING_ALPHA))
-            alpha = self.estimate_flipping_alpha(
+            alpha = self.estimate_flip_alpha(
                 encounters, activation, response, alpha)
 
             # Update decay estimates of previous encounters
@@ -66,7 +68,32 @@ class FlippingModel(sp.SpacingModel):
 
         return self.calculate_activation_from_encounters(encounters, time)
 
-    def estimate_flipping_alpha(self, encounters: List[Encounter], activation: float, response: Response, previous_alpha: float) -> float:
+    def get_flip_alpha(self, time: int, fact: Fact) -> float:
+        """
+        Return the estimated flip alpha of the fact at the specified time
+        """
+        encounters = []
+
+        responses_for_fact = [
+            r for r in self.responses if r.fact.fact_id == fact.fact_id and r.start_time < time and r.fact.flipped == fact.flipped]
+        alpha = self.FLIPPING_ALPHA
+
+        # Calculate the activation by running through the sequence of previous responses
+        for response in responses_for_fact:
+            activation = self.calculate_activation_from_encounters(
+                encounters, response.start_time)
+            encounters.append(Encounter(activation, response.start_time,
+                              self.normalise_reaction_time(response), self.DEFAULT_ALPHA))
+            alpha = self.estimate_flip_alpha(
+                encounters, activation, response, alpha)
+
+            # Update decay estimates of previous encounters
+            encounters = [encounter._replace(decay=self.calculate_decay(
+                encounter.activation, alpha)) for encounter in encounters]
+
+        return alpha
+
+    def estimate_flip_alpha(self, encounters: List[Encounter], activation: float, response: Response, previous_alpha: float) -> float:
         """
         Estimate the alpha parameter for an item.
         """
@@ -113,3 +140,33 @@ class FlippingModel(sp.SpacingModel):
 
         # The new alpha estimate is the average value in the remaining bracket
         return (a0 + a1) / 2
+
+    def export_data(self, path: str=None) -> Union[pd.DataFrame,str]:
+        """
+        Save the response data to the specified csv file, and return a copy of the pandas DataFrame.
+        If no path is specified, return a CSV-formatted copy of the data instead.
+        """
+
+        df_string = super().export_data()
+
+        df = pd.read_csv(io.StringIO(df_string))
+
+        def get_fact(fact_id):
+            return [f for f in self.facts if f.fact_id == str(fact_id)][0]
+
+        def calc_flip_rof(row):
+            return self.get_flip_alpha(row["start_time"] + 1, get_fact(row["fact_id"]))
+
+        def calc_flip_act(row):
+            return self.calculate_flip_activation(row["start_time"], get_fact(row["fact_id"]))
+
+        # Add column for rate of forgetting estimate after each observation
+        df["flip_alpha"] = df.apply(calc_flip_rof, axis=1)
+        df["flip_activation"] = df.apply(calc_flip_act, axis=1)
+
+        # Save to CSV file if a path was specified, otherwise return the CSV-formatted output
+        if path is not None:
+            df.to_csv(path, encoding="UTF-8")
+            return df
+
+        return df.to_csv()

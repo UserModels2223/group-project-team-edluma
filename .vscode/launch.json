@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/main.py",
             "console": "integratedTerminal",
-            "args": ["--file","./data/swahili.csv"],
+            "args": ["--file","./data/swahili.csv","--time","1"],
             "justMyCode": true
         }
     ]

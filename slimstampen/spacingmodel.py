@@ -1,7 +1,7 @@
 """spacingmodel"""
 from __future__ import division
 from collections import namedtuple
-from typing import Tuple, List
+from typing import Tuple, List, Union
 import math
 import pandas as pd
 
@@ -26,8 +26,7 @@ class SpacingModel(object):
         self.facts = []
         self.responses = []
 
-    def add_fact(self, fact):
-        # type: (Fact) -> None
+    def add_fact(self, fact: Fact) -> None:
         """
         Add a fact to the list of study items.
         """
@@ -38,8 +37,7 @@ class SpacingModel(object):
 
         self.facts.append(fact)
 
-    def register_response(self, response):
-        # type: (Response) -> None
+    def register_response(self, response: Response) -> None:
         """
         Register a response.
         """
@@ -50,8 +48,7 @@ class SpacingModel(object):
 
         self.responses.append(response)
 
-    def get_next_fact(self, current_time):
-        # type: (int) -> Tuple[Fact, bool]
+    def get_next_fact(self, current_time: int) -> Tuple[Fact, bool]:
         """
         Returns a tuple containing the fact that needs to be repeated most urgently and a boolean indicating whether this fact is new (True) or has been presented before (False).
         If none of the previously studied facts needs to be repeated right now, return a new fact instead.
@@ -81,8 +78,7 @@ class SpacingModel(object):
         # If none of the previously seen facts has an activation below the threshold, return a new fact
         return ((not_seen_facts[0][0], True))
 
-    def get_rate_of_forgetting(self, time, fact):
-        # type: (int, Fact) -> float
+    def get_rate_of_forgetting(self, time: int, fact:Fact) -> float:
         """
         Return the estimated rate of forgetting of the fact at the specified time
         """
@@ -107,8 +103,7 @@ class SpacingModel(object):
 
         return alpha
 
-    def calculate_activation(self, time, fact):
-        # type: (int, Fact) -> float
+    def calculate_activation(self, time: int, fact: Fact) -> float:
         """
         Calculate the activation of a fact at the given time.
         """
@@ -134,15 +129,13 @@ class SpacingModel(object):
 
         return self.calculate_activation_from_encounters(encounters, time)
 
-    def calculate_decay(self, activation, alpha):
-        # type: (float, float) -> float
+    def calculate_decay(self, activation: float, alpha: float) -> float:
         """
         Calculate activation-dependent decay
         """
         return self.C * math.exp(activation) + alpha
 
-    def estimate_alpha(self, encounters, activation, response, previous_alpha):
-        # type: (List[Encounter], float, Response, float) -> float
+    def estimate_alpha(self, encounters: List[Encounter], activation: float, response: Response, previous_alpha: float) -> float:
         """
         Estimate the rate of forgetting parameter (alpha) for an item.
         """
@@ -190,8 +183,7 @@ class SpacingModel(object):
         # The new alpha estimate is the average value in the remaining bracket
         return (a0 + a1) / 2
 
-    def calculate_activation_from_encounters(self, encounters, current_time):
-        # type: (List[Encounter], int) -> float
+    def calculate_activation_from_encounters(self, encounters: List[Encounter], current_time: int) -> float:
         included_encounters = [e for e in encounters if e.time < current_time]
 
         if len(included_encounters) == 0:
@@ -199,8 +191,7 @@ class SpacingModel(object):
 
         return math.log(sum([math.pow((current_time - e.time) / 1000, -e.decay) for e in included_encounters]))
 
-    def calculate_predicted_reaction_time_error(self, test_set, decay_adjusted_encounters, reading_time):
-        # type: (List[Encounter], List[Encounter], Fact) -> float
+    def calculate_predicted_reaction_time_error(self, test_set: List[Encounter], decay_adjusted_encounters: List[Encounter], reading_time: int) -> float:
         """
         Calculate the summed absolute difference between observed response times and those predicted based on a decay adjustment.
         """
@@ -212,15 +203,13 @@ class SpacingModel(object):
                      for (e, rt) in zip(test_set, rt)]
         return sum(rt_errors)
 
-    def estimate_reaction_time_from_activation(self, activation, reading_time):
-        # type: (float, int) -> float
+    def estimate_reaction_time_from_activation(self, activation: float, reading_time: int) -> float:
         """
         Calculate an estimated reaction time given a fact's activation and the expected reading time
         """
         return (self.F * math.exp(-activation) + (reading_time / 1000)) * 1000
 
-    def get_max_reaction_time_for_fact(self, fact):
-        # type: (Fact) -> float
+    def get_max_reaction_time_for_fact(self, fact: Fact) -> float:
         """
         Return the highest response time we can reasonably expect for a given fact
         """
@@ -230,8 +219,7 @@ class SpacingModel(object):
                 self.FORGET_THRESHOLD, reading_time)
         return max_rt
 
-    def get_reading_time(self, text):
-        # type: (str) -> float
+    def get_reading_time(self, text: str) -> float:
         """
         Return expected reading time in milliseconds for a given string
         """
@@ -243,8 +231,7 @@ class SpacingModel(object):
 
         return 300
 
-    def normalise_reaction_time(self, response):
-        # type: (Response) -> float
+    def normalise_reaction_time(self, response: Response) -> float:
         """
         Cut off extremely long responses to keep the reaction time within reasonable bounds
         """
@@ -252,8 +239,7 @@ class SpacingModel(object):
         max_rt = self.get_max_reaction_time_for_fact(response.fact)
         return min(rt, max_rt)
 
-    def export_data(self, path=None):
-        # type: (str) -> pd.DataFrame
+    def export_data(self, path: str=None) -> Union[pd.DataFrame, str]:
         """
         Save the response data to the specified csv file, and return a copy of the pandas DataFrame.
         If no path is specified, return a CSV-formatted copy of the data instead.
@@ -262,12 +248,16 @@ class SpacingModel(object):
         def calc_rof(row):
             return self.get_rate_of_forgetting(row["start_time"] + 1, row["fact"])
 
+        def calc_act(row):
+            return self.calculate_activation(row["start_time"], row["fact"])
+
         dat_resp = pd.DataFrame(self.responses)
         dat_facts = pd.DataFrame([r.fact for r in self.responses])
         dat = pd.concat([dat_resp, dat_facts], axis=1)
 
         # Add column for rate of forgetting estimate after each observation
         dat["alpha"] = dat.apply(calc_rof, axis=1)
+        dat["activation"] = dat.apply(calc_act, axis=1)
         dat.drop(columns="fact", inplace=True)
 
         # Add trial number column
