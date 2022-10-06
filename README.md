@@ -6,7 +6,7 @@ We use the 1000 most common Swahili words as input for our experiments, but remo
 
 ## Requirements
 
-- [Python 3](https://www.python.org/downloads/) (recommended) or Python 2.7+
+- [Python 3](https://www.python.org/downloads/)
 - [pandas](https://pandas.pydata.org/getting_started.html)
 
 To open the tutorial, you need [jupyter](https://jupyter.org/install). The experiment example requires [OpenSesame](https://osdoc.cogsci.nl/3.3/download/).
