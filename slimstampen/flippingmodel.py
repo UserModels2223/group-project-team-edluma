@@ -15,7 +15,7 @@ class FlippingModel(sp.SpacingModel):
     An extension to the basic slimstampen spacingmodel that flips the question and answer of the individual facts in a regular order.
     """
 
-    FLIPPING_THRESHOLD = -0.6
+    FLIPPING_THRESHOLD = -0.75
     FLIPPING_ALPHA = 0.3
 
     def get_next_fact(self, current_time: int) -> Tuple[Fact, bool]:
@@ -83,7 +83,7 @@ class FlippingModel(sp.SpacingModel):
             activation = self.calculate_activation_from_encounters(
                 encounters, response.start_time)
             encounters.append(Encounter(activation, response.start_time,
-                              self.normalise_reaction_time(response), self.DEFAULT_ALPHA))
+                              self.normalise_reaction_time(response), self.FLIPPING_ALPHA))
             alpha = self.estimate_flip_alpha(
                 encounters, activation, response, alpha)
 
