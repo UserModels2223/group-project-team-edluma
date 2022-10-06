@@ -4,11 +4,11 @@ import slimstampen.flippingmodel as slim
 import argparse
 
 parser = argparse.ArgumentParser(prog="Slimstampen Flipping model",
-                                 description="runs the slimstampen spacing model extended with a flipping functionality", epilog="Type `exit`at any time during the run to end immediatly")
+                                 description="runs the slimstampen spacing model extended with a flipping functionality", epilog="Type `exit` at any time during the run to end immediatly")
 parser.add_argument("--time", "-T", type=int, default=10,
-                    help="The number of minutes the program should be run (default: 10)")
+                    help="The number of minutes the program should run (default: 10)")
 parser.add_argument("--file", "-F", type=str,
-                    help="The csv file that will be used to generate the facts", required=True)
+                    help="The path to the csv file that will be used to generate the facts", required=True)
 
 if __name__ == "__main__":
 
