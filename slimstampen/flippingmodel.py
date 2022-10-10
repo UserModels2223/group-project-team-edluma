@@ -34,7 +34,7 @@ class FlippingModel(sp.SpacingModel):
     def flip_fact(self, fact: Fact, time: int) -> Fact:
         """decide if the fact needs to be flipped or not"""
 
-        if self.calculate_flip_activation(time, fact) < self.FLIPPING_THRESHOLD:
+        if self.calculate_flip_activation(time, fact) > self.FLIPPING_THRESHOLD:
 
             new_fact = fact._replace(
                 question=fact.answer, answer=fact.question, flipped=not fact.flipped)

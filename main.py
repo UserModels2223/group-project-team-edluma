@@ -57,6 +57,8 @@ if __name__ == "__main__":
         correct = False
         if answer == fact.answer:
             correct = True
+        else:
+            print(f"That was not correct! {fact.question} means {fact.answer}")
 
         resp = slim.Response(fact, presTime, rt, correct)
         m.register_response(resp)
