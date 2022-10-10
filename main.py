@@ -11,7 +11,7 @@ parser.add_argument("--file", "-F", type=str,
                     help="The path to the csv file that will be used to generate the facts", required=True)
 parser.add_argument("--limit", "-L", type=int,
                     help="Limits the maximal number of words used in the training session (default: no limit)")
-parser.add_argument("--trials", "-R", type=int, 
+parser.add_argument("--trials", "-R", type=int,
                     help="Specifies the maximal number of trials for the run (default: no limit)\nWhen this option is specified together with a time limit, the session will end with the first parameter to be reach the limit.")
 
 if __name__ == "__main__":
@@ -55,7 +55,7 @@ if __name__ == "__main__":
 
         rt = int(time()*1000 - startMs) - presTime
         correct = False
-        if answer == fact.answer:
+        if answer.lower() == fact.answer.lower():
             correct = True
         else:
             print(f"That was not correct! {fact.question} means {fact.answer}")
