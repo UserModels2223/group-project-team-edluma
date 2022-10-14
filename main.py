@@ -66,4 +66,6 @@ if __name__ == "__main__":
         start = time()
         count+=1
 
+    print(m.get_test_questions())
+
     m.export_data("data.csv")

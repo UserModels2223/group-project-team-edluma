@@ -1,4 +1,5 @@
 """flippingmodel"""
+from cmath import inf
 from math import floor
 import slimstampen.spacingmodel as sp
 from collections import namedtuple
@@ -67,13 +68,14 @@ class FlippingModel(sp.SpacingModel):
             fact = [f for f in self.facts if f.fact_id == idx][0]
             if fact.flipped:
                 # normalize facts
-                fact._replace(question=fact.answer,
+                fact = fact._replace(question=fact.answer,
                               answer=fact.question, flipped=not fact.flipped)
             studied_facts.append(fact)
 
         random.shuffle(studied_facts)
 
-        studied_facts = studied_facts[:max_facts]
+        if max_facts:
+            studied_facts = studied_facts[:max_facts]
 
         num_facts = len(studied_facts)
 
