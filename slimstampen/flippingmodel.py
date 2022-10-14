@@ -1,9 +1,11 @@
 """flippingmodel"""
+from math import floor
 import slimstampen.spacingmodel as sp
 from collections import namedtuple
 from typing import Tuple, List, Union
 import pandas as pd
 import io
+import random
 
 Fact = namedtuple("Fact", sp.Fact._fields + ("flipped",), defaults=(False,))
 Response = sp.Response
@@ -18,7 +20,7 @@ class FlippingModel(sp.SpacingModel):
     FLIPPING_THRESHOLD = -0.75
     FLIPPING_ALPHA = 0.3
 
-    def get_next_fact(self, current_time: int) -> Tuple[Fact, bool]:
+    def get_next_fact(self, current_time: int, use_flipping: bool = True) -> Tuple[Fact, bool]:
         """
         Returns a tuple containing the fact that needs to be repeated most urgently and a boolean indicating whether this fact is new (True) or has been presented before (False).
         If none of the previously studied facts needs to be repeated right now, return a new fact instead.
@@ -26,10 +28,10 @@ class FlippingModel(sp.SpacingModel):
         """
         next_fact, new = super().get_next_fact(current_time)
 
-        if new:
+        if use_flipping or not new:
+            return self.flip_fact(next_fact, current_time), new
+        else:
             return next_fact, new
-
-        return self.flip_fact(next_fact, current_time), new
 
     def flip_fact(self, fact: Fact, time: int) -> Fact:
         """decide if the fact needs to be flipped or not"""
@@ -43,6 +45,46 @@ class FlippingModel(sp.SpacingModel):
             return new_fact
         else:
             return fact
+
+    def get_test_questions(self, flip_ratio: float = 0.5, max_facts: int = None) -> list:
+        """
+        return randomly shuffled learned facts for testing
+        If the `max` parameter is set, the return will be limited to that number of facts if it is lower than the full number of facts.
+        The `flip_ratio` parameter determines how many of the returned facts are flipped.
+        """
+
+        dist_resp = set([r.fact.fact_id for r in self.responses])
+
+        studied_facts = []
+
+        if flip_ratio > 1:
+            flip_ratio = 1
+
+        if flip_ratio < 0:
+            flip_ratio = 0
+
+        for idx in dist_resp:
+            fact = [f for f in self.facts if f.fact_id == idx][0]
+            if fact.flipped:
+                # normalize facts
+                fact._replace(question=fact.answer,
+                              answer=fact.question, flipped=not fact.flipped)
+            studied_facts.append(fact)
+
+        random.shuffle(studied_facts)
+
+        studied_facts = studied_facts[:max_facts]
+
+        num_facts = len(studied_facts)
+
+        for i in range(floor(num_facts*flip_ratio)):
+            flip_fact = studied_facts[i]._replace(
+                question=fact.answer, answer=fact.question, flipped=not fact.flipped)
+            studied_facts[i] = flip_fact
+
+        random.shuffle(studied_facts)
+
+        return studied_facts
 
     def calculate_flip_activation(self, time: int, fact: Fact) -> float:
         """calculate the flipping activation of a fact"""
@@ -141,7 +183,7 @@ class FlippingModel(sp.SpacingModel):
         # The new alpha estimate is the average value in the remaining bracket
         return (a0 + a1) / 2
 
-    def export_data(self, path: str=None) -> Union[pd.DataFrame,str]:
+    def export_data(self, path: str = None) -> Union[pd.DataFrame, str]:
         """
         Save the response data to the specified csv file, and return a copy of the pandas DataFrame.
         If no path is specified, return a CSV-formatted copy of the data instead.
