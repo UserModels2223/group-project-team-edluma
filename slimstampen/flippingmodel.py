@@ -1,5 +1,5 @@
 """flippingmodel"""
-from math import floor
+import math
 import slimstampen.spacingmodel as sp
 from collections import namedtuple
 from typing import Tuple, List, Union
@@ -78,7 +78,7 @@ class FlippingModel(sp.SpacingModel):
 
         num_facts = len(studied_facts)
 
-        for i in range(floor(num_facts*flip_ratio)):
+        for i in range(math.floor(num_facts*flip_ratio)):
             flip_fact = studied_facts[i]._replace(
                 question=studied_facts[i].answer, answer=studied_facts[i].question, flipped=not studied_facts[i].flipped)
             studied_facts[i] = flip_fact
