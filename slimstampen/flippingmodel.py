@@ -28,7 +28,7 @@ class FlippingModel(sp.SpacingModel):
         """
         next_fact, new = super().get_next_fact(current_time)
 
-        if use_flipping or not new:
+        if use_flipping and not new:
             return self.flip_fact(next_fact, current_time), new
         else:
             return next_fact, new
