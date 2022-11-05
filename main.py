@@ -41,7 +41,7 @@ if __name__ == "__main__":
             break
 
         presTime = int(time()*1000 - startMs)
-        fact, new = m.get_next_fact(presTime)
+        fact, new = m.get_next_fact(presTime, use_flipping=False)
 
         if new:
             answer = input(
