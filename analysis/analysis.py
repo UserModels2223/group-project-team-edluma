@@ -87,25 +87,27 @@ def get_flipped(df: pd.DataFrame, is_test: bool = False, reverse: bool = False) 
 
 
 def get_flipping_stats(df: pd.DataFrame, is_test: bool = False) -> dict:
-    
+
     stats = dict()
 
     flipped_df = get_flipped(df, is_test)
 
-    df_grouped = df.groupby("subject")
+    df_grouped = df.groupby("subject", observed=True)
 
-    flipped_grouped = flipped_df.groupby("subject")
+    flipped_grouped = flipped_df.groupby("subject", observed=True)
 
-    stats["count"] = flipped_df["subject"].value_counts()
+    stats["count"] = flipped_df["subject"].value_counts(sort=False)
 
     stats["frequency"] = []
+    stats["freq_keys"] = []
 
     for key, group in flipped_grouped.groups.items():
         stats["frequency"].append(len(group)/len(df_grouped.get_group(key)))
-    
+        stats["freq_keys"].append(key)
+
     stats["mean"] = mean(stats["frequency"])
     stats["std"] = stdev(stats["frequency"])
-    
+
     return stats
 
 
