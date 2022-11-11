@@ -38,12 +38,12 @@ def get_correct_scores(df: pd.DataFrame) -> dict:
 
     scores = dict()
     scores["count"] = df.groupby(
-        "subject")["correct"].value_counts().xs(True, level=1)
-    scores["frequency"] = df.groupby("subject")["correct"].value_counts(
+        "subject",  observed=True)["correct"].value_counts().xs(True, level=1)
+    scores["frequency"] = df.groupby("subject",  observed=True)["correct"].value_counts(
         normalize=True).xs(True, level=1)
-    scores["mean"] = df.groupby("subject")["correct"].value_counts(
+    scores["mean"] = df.groupby("subject",  observed=True)["correct"].value_counts(
         normalize=True).xs(True, level=1).mean()
-    scores["std"] = df.groupby("subject")["correct"].value_counts(
+    scores["std"] = df.groupby("subject",  observed=True)["correct"].value_counts(
         normalize=True).xs(True, level=1).std()
 
     return scores
@@ -98,15 +98,18 @@ def get_flipping_stats(df: pd.DataFrame, is_test: bool = False) -> dict:
 
     stats["count"] = flipped_df["subject"].value_counts(sort=False)
 
-    stats["frequency"] = []
-    stats["freq_keys"] = []
+    frequency = []
+    freq_keys = []
 
     for key, group in flipped_grouped.groups.items():
-        stats["frequency"].append(len(group)/len(df_grouped.get_group(key)))
-        stats["freq_keys"].append(key)
+        frequency.append(len(group)/len(df_grouped.get_group(key)))
+        freq_keys.append(key)
 
-    stats["mean"] = mean(stats["frequency"])
-    stats["std"] = stdev(stats["frequency"])
+
+    stats["frequency"] = pd.DataFrame({"subject": frequency, "frequency": freq_keys})
+
+    stats["mean"] = mean(frequency)
+    stats["std"] = stdev(frequency)
 
     return stats
 

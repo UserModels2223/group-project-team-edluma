@@ -12,6 +12,14 @@
             "console": "integratedTerminal",
             "args": ["--file","./data/swahili.csv","--time","1"],
             "justMyCode": true
+        },
+        {
+            "name": "Launch analysis",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/analysis/analysis.py",
+            "console": "integratedTerminal",
+            "justMyCode": true
         }
     ]
 }
